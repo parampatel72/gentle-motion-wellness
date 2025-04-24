@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useTheme } from "@/providers/ThemeProvider";
 import PageContainer from "@/components/layout/PageContainer";
 import NavBar from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,12 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 const Settings = () => {
+  const { theme, contrast, toggleTheme, toggleContrast } = useTheme();
   const [fontSizeLevel, setFontSizeLevel] = useState(2);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(theme === "dark");
   const [voiceGuidance, setVoiceGuidance] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [highContrast, setHighContrast] = useState(false);
+  const [highContrast, setHighContrast] = useState(contrast === "high");
 
   const handleFontSizeChange = (value: number[]) => {
     setFontSizeLevel(value[0]);
@@ -32,8 +33,8 @@ const Settings = () => {
   };
 
   const handleDarkModeToggle = () => {
-    setDarkMode(!darkMode);
-    toast.success(darkMode ? "Light mode enabled" : "Dark mode enabled");
+    toggleTheme();
+    toast.success(theme === "dark" ? "Light mode enabled" : "Dark mode enabled");
   };
 
   const handleVoiceGuidanceToggle = () => {
@@ -51,22 +52,20 @@ const Settings = () => {
   };
 
   const handleHighContrastToggle = () => {
-    setHighContrast(!highContrast);
+    toggleContrast();
     toast.success(
-      highContrast ? "High contrast mode disabled" : "High contrast mode enabled"
+      contrast === "high" ? "High contrast mode disabled" : "High contrast mode enabled"
     );
   };
 
   return (
     <>
       <PageContainer>
-        {/* Header */}
         <header className="mb-6">
           <h1 className="text-2xl font-semibold">Settings</h1>
           <p className="text-muted-foreground">Customize your experience</p>
         </header>
 
-        {/* Account Section */}
         <section className="mb-8">
           <h2 className="text-lg font-medium mb-3">Account</h2>
           <div className="space-y-2">
@@ -91,7 +90,6 @@ const Settings = () => {
 
         <Separator className="my-4" />
 
-        {/* Accessibility Section */}
         <section className="mb-8">
           <h2 className="text-lg font-medium mb-3">Accessibility</h2>
           <div className="space-y-6">
@@ -127,7 +125,7 @@ const Settings = () => {
                 </div>
               </div>
               <Switch
-                checked={highContrast}
+                checked={contrast === "high"}
                 onCheckedChange={handleHighContrastToggle}
               />
             </div>
@@ -143,7 +141,7 @@ const Settings = () => {
                 </div>
               </div>
               <Switch
-                checked={darkMode}
+                checked={theme === "dark"}
                 onCheckedChange={handleDarkModeToggle}
               />
             </div>
@@ -168,7 +166,6 @@ const Settings = () => {
 
         <Separator className="my-4" />
 
-        {/* Notifications Section */}
         <section className="mb-8">
           <h2 className="text-lg font-medium mb-3">Notifications</h2>
           <div className="flex items-center justify-between">
@@ -190,7 +187,6 @@ const Settings = () => {
 
         <Separator className="my-4" />
 
-        {/* Help and About Section */}
         <section className="mb-8">
           <h2 className="text-lg font-medium mb-3">Help & About</h2>
           <div className="space-y-2">
