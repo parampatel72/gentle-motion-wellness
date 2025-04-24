@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./providers/ThemeProvider";
+import AuthGuard from "./components/AuthGuard";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Workouts from "./pages/Workouts";
@@ -25,12 +27,37 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/workouts" element={<Workouts />} />
-            <Route path="/workouts/:id" element={<WorkoutDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={
+              <AuthGuard>
+                <Onboarding />
+              </AuthGuard>
+            } />
+            <Route path="/dashboard" element={
+              <AuthGuard>
+                <Dashboard />
+              </AuthGuard>
+            } />
+            <Route path="/workouts" element={
+              <AuthGuard>
+                <Workouts />
+              </AuthGuard>
+            } />
+            <Route path="/workouts/:id" element={
+              <AuthGuard>
+                <WorkoutDetail />
+              </AuthGuard>
+            } />
+            <Route path="/profile" element={
+              <AuthGuard>
+                <Profile />
+              </AuthGuard>
+            } />
+            <Route path="/settings" element={
+              <AuthGuard>
+                <Settings />
+              </AuthGuard>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
