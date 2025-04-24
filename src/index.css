@@ -9,32 +9,23 @@
   :root {
     --background: 195 55% 97%;
     --foreground: 222 47% 11%;
-
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-
     --primary: 196 50% 60%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 264 50% 84%;
     --secondary-foreground: 222 47% 11%;
-
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-
     --accent: 16 80% 91%;
     --accent-foreground: 222 47% 11%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 222 84% 70%;
-
     --radius: 1rem;
   }
 
@@ -45,7 +36,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 15%;
     --popover-foreground: 210 40% 98%;
-    --primary: 196 50% 50%;
+    --primary: 196 50% 60%;
     --primary-foreground: 222 47% 11%;
     --secondary: 264 50% 74%;
     --secondary-foreground: 210 40% 98%;
@@ -116,7 +107,7 @@
 
 @layer components {
   .gentle-card {
-    @apply bg-white rounded-2xl shadow-soft p-4 border border-border;
+    @apply bg-card text-card-foreground rounded-2xl shadow-soft p-4 border border-border transition-colors duration-200;
   }
   
   .btn-icon-text {
