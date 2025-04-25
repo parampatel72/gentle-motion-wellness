@@ -1,9 +1,20 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export function useAuth() {
+// Create Context
+type AuthContextType = {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Provider Component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,10 +39,25 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return {
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const value = {
     user,
     session,
     loading,
-    signOut: () => supabase.auth.signOut(),
+    signOut,
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// Hook for using the auth context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

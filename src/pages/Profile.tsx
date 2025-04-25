@@ -1,58 +1,150 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import PageContainer from "@/components/layout/PageContainer";
 import NavBar from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { User, Award, Calendar, ArrowRight, Edit } from "lucide-react";
+import { User, Award, Calendar, ArrowRight, Edit, Activity, Clock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+
+interface ProfileData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  age: string | null;
+  goals: string[] | null;
+  joined: string | null;
+  streak: number;
+  total_workouts: number;
+}
+
+interface Achievement {
+  title: string;
+  description: string;
+  date: string;
+}
 
 const Profile = () => {
-  const [user, setUser] = useState({
-    name: "Jane Smith",
-    age: "68",
-    goals: ["joint-mobility", "balance", "cardio"],
-    joined: "February 2025",
-    streak: 12,
-    totalWorkouts: 24,
-    achievements: [
-      {
-        title: "First Steps",
-        description: "Completed your first workout",
-        date: "Feb 10, 2025",
-      },
-      {
-        title: "Consistency",
-        description: "Completed 5 workouts in one week",
-        date: "Feb 18, 2025",
-      },
-      {
-        title: "Explorer",
-        description: "Tried 3 different workout types",
-        date: "Mar 2, 2025",
-      },
-    ],
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    id: "",
+    first_name: "",
+    last_name: "",
+    age: "",
+    goals: [],
+    joined: "",
+    streak: 0,
+    total_workouts: 0
   });
+  
+  const [achievements, setAchievements] = useState<Achievement[]>([
+    {
+      title: "First Steps",
+      description: "Completed your first workout",
+      date: "Feb 10, 2025",
+    },
+    {
+      title: "Consistency",
+      description: "Completed 5 workouts in one week",
+      date: "Feb 18, 2025",
+    },
+    {
+      title: "Explorer",
+      description: "Tried 3 different workout types",
+      date: "Mar 2, 2025",
+    },
+  ]);
 
   useEffect(() => {
-    // Get user data from local storage
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsedData = JSON.parse(userData);
-      setUser((prevUser) => ({
-        ...prevUser,
-        name: parsedData.name || prevUser.name,
-        age: parsedData.age || prevUser.age,
-        goals: parsedData.goals || prevUser.goals,
-      }));
-    }
-  }, []);
+    const fetchProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch profile data from Supabase
+        const { data: profile, error } = await (supabase as any)
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching profile:", error);
+          toast({
+            title: "Error",
+            description: "Could not load profile data. Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Format the joined date nicely
+        const joinedDate = user.created_at 
+          ? new Date(user.created_at).toLocaleDateString('en-US', { 
+              month: 'long', 
+              year: 'numeric' 
+            })
+          : "Recently";
+          
+        // Update profile data with fetched information
+        setProfileData({
+          id: user.id,
+          first_name: profile?.first_name || "User",
+          last_name: profile?.last_name || "",
+          age: profile?.age ? profile.age.toString() : "",
+          goals: profile?.goals || ["joint-mobility", "balance", "cardio"],
+          joined: joinedDate,
+          streak: profile?.streak || 0,
+          total_workouts: profile?.total_workouts || 0
+        });
+      } catch (error: any) {
+        console.error("Error in profile fetch:", error);
+        toast({
+          title: "Error",
+          description: "Could not load profile data. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProfileData();
+  }, [user, toast]);
+
+  const handleEditProfile = () => {
+    navigate("/settings");
+  };
 
   const goalLabels: Record<string, string> = {
     "joint-mobility": "Joint Mobility",
-    balance: "Balance & Stability",
-    strength: "Gentle Strength",
-    cardio: "Heart Health",
+    "balance": "Balance & Stability",
+    "strength": "Gentle Strength",
+    "cardio": "Heart Health",
+    "flexibility": "Flexibility",
+    "coordination": "Coordination",
+    "endurance": "Endurance"
   };
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-[80vh]">
+          <p className="text-lg">Loading profile...</p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const fullName = `${profileData.first_name} ${profileData.last_name}`.trim();
+  const displayName = fullName || "User";
 
   return (
     <>
@@ -63,7 +155,12 @@ const Profile = () => {
             <h1 className="text-2xl font-semibold">My Profile</h1>
             <p className="text-muted-foreground">View your progress and achievements</p>
           </div>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleEditProfile}
+            aria-label="Edit Profile"
+          >
             <Edit size={20} />
           </Button>
         </header>
@@ -75,32 +172,37 @@ const Profile = () => {
               <User size={32} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-medium">{user.name}</h2>
-              <p className="text-muted-foreground">Age {user.age} • Joined {user.joined}</p>
+              <h2 className="text-xl font-medium">{displayName}</h2>
+              <p className="text-muted-foreground">
+                {profileData.age && `Age ${profileData.age} • `}
+                Joined {profileData.joined}
+              </p>
             </div>
           </div>
           
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">My Goals</h3>
-            <div className="flex flex-wrap gap-2">
-              {user.goals.map((goal) => (
-                <span
-                  key={goal}
-                  className="bg-gentle-teal-light text-gentle-teal px-3 py-1 rounded-full text-sm"
-                >
-                  {goalLabels[goal]}
-                </span>
-              ))}
+          {profileData.goals && profileData.goals.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">My Goals</h3>
+              <div className="flex flex-wrap gap-2">
+                {profileData.goals.map((goal) => (
+                  <span
+                    key={goal}
+                    className="bg-gentle-teal-light text-gentle-teal px-3 py-1 rounded-full text-sm"
+                  >
+                    {goalLabels[goal] || goal}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gentle-blue-light p-4 rounded-xl text-center">
-              <div className="text-2xl font-bold">{user.streak}</div>
+              <div className="text-2xl font-bold">{profileData.streak}</div>
               <div className="text-sm text-muted-foreground">Day Streak</div>
             </div>
             <div className="bg-gentle-peach-light p-4 rounded-xl text-center">
-              <div className="text-2xl font-bold">{user.totalWorkouts}</div>
+              <div className="text-2xl font-bold">{profileData.total_workouts}</div>
               <div className="text-sm text-muted-foreground">Total Workouts</div>
             </div>
           </div>
@@ -110,7 +212,11 @@ const Profile = () => {
         <section className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Activity History</h2>
-            <Button variant="ghost" className="text-primary hover:text-primary/80 btn-icon-text">
+            <Button 
+              variant="ghost" 
+              className="text-primary hover:text-primary/80 btn-icon-text"
+              onClick={() => navigate("/workouts")}
+            >
               View All <ArrowRight size={16} />
             </Button>
           </div>
@@ -119,7 +225,7 @@ const Profile = () => {
             <div className="flex items-center justify-between p-3 border border-border rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="bg-gentle-teal-light p-2 rounded-lg">
-                  <Calendar size={20} className="text-gentle-teal" />
+                  <Activity size={20} className="text-gentle-teal" />
                 </div>
                 <div>
                   <div className="font-medium">Chair Yoga</div>
@@ -130,7 +236,7 @@ const Profile = () => {
             <div className="flex items-center justify-between p-3 border border-border rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="bg-gentle-lavender-light p-2 rounded-lg">
-                  <Calendar size={20} className="text-gentle-lavender" />
+                  <Activity size={20} className="text-gentle-lavender" />
                 </div>
                 <div>
                   <div className="font-medium">Balance Training</div>
@@ -141,7 +247,7 @@ const Profile = () => {
             <div className="flex items-center justify-between p-3 border border-border rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="bg-gentle-peach-light p-2 rounded-lg">
-                  <Calendar size={20} className="text-gentle-peach" />
+                  <Clock size={20} className="text-gentle-peach" />
                 </div>
                 <div>
                   <div className="font-medium">Gentle Stretching</div>
@@ -156,7 +262,7 @@ const Profile = () => {
         <section className="mb-4">
           <h2 className="text-xl font-medium mb-4">Achievements</h2>
           <div className="space-y-4">
-            {user.achievements.map((achievement, index) => (
+            {achievements.map((achievement, index) => (
               <div
                 key={index}
                 className="flex items-start gap-4 p-4 border border-border rounded-xl"
