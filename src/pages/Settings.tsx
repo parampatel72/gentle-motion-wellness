@@ -25,6 +25,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, LogOut, Moon, Save, User } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
+// Define types for the profile data
+interface ProfileData {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  age: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 const profileFormSchema = z.object({
   first_name: z.string().min(2, { message: "First name must be at least 2 characters" }),
   last_name: z.string().min(2, { message: "Last name must be at least 2 characters" }),
@@ -45,7 +55,7 @@ type PreferencesFormValues = z.infer<typeof preferencesFormSchema>;
 const Settings = () => {
   const { user, session, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -74,8 +84,9 @@ const Settings = () => {
       try {
         setLoading(true);
         
-        // Fetch profile data
-        const { data: profile, error } = await supabase
+        // Using type assertion to bypass type checking for now
+        // since the Supabase types haven't updated yet
+        const { data: profile, error } = await (supabase as any)
           .from('profiles')
           .select('*')
           .eq('id', user.id)
@@ -87,9 +98,9 @@ const Settings = () => {
         
         // Update form with user data
         profileForm.reset({
-          first_name: profile.first_name || "",
-          last_name: profile.last_name || "",
-          age: profile.age ? profile.age.toString() : "",
+          first_name: profile?.first_name || "",
+          last_name: profile?.last_name || "",
+          age: profile?.age ? profile.age.toString() : "",
           email: user.email || "",
         });
         
@@ -115,8 +126,8 @@ const Settings = () => {
     try {
       setLoading(true);
       
-      // Update profile in Supabase
-      const { error } = await supabase
+      // Update profile in Supabase using type assertion
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({
           first_name: data.first_name,
