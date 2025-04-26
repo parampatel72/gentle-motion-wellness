@@ -83,8 +83,8 @@ const Workouts = () => {
                 title={workout.title}
                 category={workout.category.name}
                 duration={`${workout.duration} minutes`}
-                difficulty={workout.difficulty}
-                image={workout.image_url}
+                difficulty={workout.difficulty as "easy" | "medium" | "hard"}
+                image={workout.image_url || ''}
               />
             ))}
           </div>
