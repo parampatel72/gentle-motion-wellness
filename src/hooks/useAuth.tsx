@@ -2,6 +2,7 @@
 import { useEffect, useState, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 // Create Context
 type AuthContextType = {
@@ -25,6 +26,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        // If user is signing up or logging in, ensure profile exists
+        if (session?.user && (event === 'SIGNED_IN')) {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profileError) {
+              // Profile doesn't exist, create it
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  first_name: session.user.user_metadata?.first_name || '',
+                  last_name: session.user.user_metadata?.last_name || ''
+                });
+
+              if (insertError) {
+                throw insertError;
+              }
+            }
+          } catch (error) {
+            console.error("Error creating/checking profile:", error);
+            toast.error("Error setting up user profile");
+          }
+        }
+
         setLoading(false);
       }
     );
