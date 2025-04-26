@@ -1,67 +1,31 @@
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PageContainer from "@/components/layout/PageContainer";
 import WorkoutCard from "@/components/ui/WorkoutCard";
 import NavBar from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-
-// Sample workout data
-const workoutsData = [
-  {
-    id: "chair-yoga",
-    title: "Chair Yoga Basics",
-    category: "Flexibility",
-    duration: "15 minutes",
-    difficulty: "easy" as const,
-    image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=800&h=600",
-  },
-  {
-    id: "balance-training",
-    title: "Balance Training",
-    category: "Stability",
-    duration: "20 minutes",
-    difficulty: "medium" as const,
-    image: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=800&h=600",
-  },
-  {
-    id: "gentle-stretching",
-    title: "Gentle Morning Stretches",
-    category: "Flexibility",
-    duration: "10 minutes",
-    difficulty: "easy" as const,
-    image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&h=600",
-  },
-  {
-    id: "mindful-walking",
-    title: "Mindful Walking",
-    category: "Cardio",
-    duration: "25 minutes",
-    difficulty: "medium" as const,
-    image: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?auto=format&fit=crop&w=800&h=600",
-  },
-];
-
-const categories = [
-  "All",
-  "Flexibility",
-  "Stability",
-  "Strength",
-  "Cardio",
-  "Relaxation",
-];
+import { fetchWorkouts } from "@/lib/api/workouts";
 
 const Workouts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const filteredWorkouts = workoutsData.filter((workout) => {
+  const { data: workouts = [], isLoading } = useQuery({
+    queryKey: ['workouts'],
+    queryFn: fetchWorkouts,
+  });
+
+  const categories = ["All", ...new Set(workouts.map(workout => workout.category.name))];
+
+  const filteredWorkouts = workouts.filter((workout) => {
     const matchesSearch = workout.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesCategory =
-      activeCategory === "All" || workout.category === activeCategory;
+      activeCategory === "All" || workout.category.name === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -106,10 +70,22 @@ const Workouts = () => {
         </div>
 
         {/* Workouts Grid */}
-        {filteredWorkouts.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-10">
+            <p className="text-lg text-muted-foreground">Loading workouts...</p>
+          </div>
+        ) : filteredWorkouts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredWorkouts.map((workout) => (
-              <WorkoutCard key={workout.id} {...workout} />
+              <WorkoutCard
+                key={workout.id}
+                id={workout.id}
+                title={workout.title}
+                category={workout.category.name}
+                duration={`${workout.duration} minutes`}
+                difficulty={workout.difficulty}
+                image={workout.image_url}
+              />
             ))}
           </div>
         ) : (

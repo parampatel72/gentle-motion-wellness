@@ -1,117 +1,40 @@
-
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import PageContainer from "@/components/layout/PageContainer";
 import NavBar from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
-import { Clock, ArrowLeft, Volume, User, Calendar, Heart } from "lucide-react";
+import { Clock, ArrowLeft, Volume, User, Heart } from "lucide-react";
 import { toast } from "sonner";
-
-// Sample workout data - in a real app, this would come from an API
-const getWorkoutById = (id: string) => {
-  const workouts = {
-    "chair-yoga": {
-      title: "Chair Yoga Basics",
-      category: "Flexibility",
-      duration: "15 minutes",
-      difficulty: "easy",
-      image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=800&h=600",
-      description: "A gentle yoga practice that can be done while seated. Perfect for improving flexibility and reducing stiffness in the joints.",
-      benefits: ["Improves flexibility", "Reduces joint pain", "Enhances circulation", "Reduces stress"],
-      instructor: "Sarah Johnson",
-      steps: [
-        "Start seated with feet flat on the floor, back straight",
-        "Roll shoulders backward and forward gently",
-        "Stretch arms overhead, feeling the stretch in your sides",
-        "Twist upper body to each side while keeping hips stable",
-        "Extend one leg at a time, flex and point toes",
-        "Practice deep breathing throughout the session"
-      ]
-    },
-    "balance-training": {
-      title: "Balance Training",
-      category: "Stability",
-      duration: "20 minutes",
-      difficulty: "medium",
-      image: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=800&h=600",
-      description: "Improve your stability and prevent falls with these simple balance exercises that can be done with chair support.",
-      benefits: ["Improves stability", "Prevents falls", "Strengthens leg muscles", "Boosts confidence"],
-      instructor: "Robert Chen",
-      steps: [
-        "Start with feet hip-width apart, holding onto a sturdy chair",
-        "Practice weight shifts from one foot to another",
-        "Try standing on one leg for 10-30 seconds, then switch",
-        "Walk heel to toe in a straight line",
-        "Practice sitting and standing without using hands",
-        "Try gentle leg raises to strengthen supporting muscles"
-      ]
-    },
-    "gentle-stretching": {
-      title: "Gentle Morning Stretches",
-      category: "Flexibility",
-      duration: "10 minutes",
-      difficulty: "easy",
-      image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&h=600",
-      description: "Start your day with gentle stretches to reduce stiffness and increase energy levels.",
-      benefits: ["Reduces morning stiffness", "Improves circulation", "Boosts energy", "Enhances mood"],
-      instructor: "Maria Garcia",
-      steps: [
-        "Begin with gentle neck rotations",
-        "Roll shoulders forward and backward",
-        "Gently stretch arms overhead and to sides",
-        "Perform seated spinal twists",
-        "Stretch calves and ankles while seated",
-        "End with deep breathing exercises"
-      ]
-    },
-    "mindful-walking": {
-      title: "Mindful Walking",
-      category: "Cardio",
-      duration: "25 minutes",
-      difficulty: "medium",
-      image: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?auto=format&fit=crop&w=800&h=600",
-      description: "Combine gentle cardio with mindfulness for a refreshing and rejuvenating experience.",
-      benefits: ["Improves cardiovascular health", "Reduces stress", "Enhances mindfulness", "Boosts mood"],
-      instructor: "David Wilson",
-      steps: [
-        "Begin with 5 minutes of gentle warm-up walking",
-        "Focus on your breathing as you walk",
-        "Notice the sensation of your feet touching the ground",
-        "Observe your surroundings without judgment",
-        "Gradually increase pace for 10 minutes, then slow down",
-        "End with 5 minutes of cool-down walking"
-      ]
-    }
-  };
-
-  return workouts[id as keyof typeof workouts];
-};
+import { useAuth } from "@/hooks/useAuth";
+import { fetchWorkoutById, markWorkoutAsCompleted } from "@/lib/api/workouts";
 
 const WorkoutDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [workout, setWorkout] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (id) {
-      const workoutData = getWorkoutById(id);
-      if (workoutData) {
-        setWorkout(workoutData);
-      }
-      setLoading(false);
+  const { data: workout, isLoading } = useQuery({
+    queryKey: ['workout', id],
+    queryFn: () => fetchWorkoutById(id!),
+    enabled: !!id
+  });
+
+  const handleStartWorkout = async () => {
+    if (!workout || !user) return;
+
+    try {
+      await markWorkoutAsCompleted(workout.id, user.id);
+      toast.success("Workout completed! Great job!");
+    } catch (error) {
+      toast.error("Failed to mark workout as completed");
     }
-  }, [id]);
-
-  const handleStartWorkout = () => {
-    toast.success("Workout started! Take it at your own pace.");
   };
 
   const handleVoiceGuidance = () => {
     toast.info("Voice guidance enabled");
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <PageContainer>
         <p className="text-center py-10">Loading workout details...</p>
@@ -147,13 +70,13 @@ const WorkoutDetail = () => {
         {/* Workout Image */}
         <div className="relative rounded-2xl overflow-hidden h-56 mb-6">
           <img
-            src={workout.image}
+            src={workout.image_url}
             alt={workout.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
             <div className="p-4 text-white">
-              <div className="text-sm font-medium mb-1">{workout.category}</div>
+              <div className="text-sm font-medium mb-1">{workout.category.name}</div>
               <h1 className="text-2xl font-bold">{workout.title}</h1>
             </div>
           </div>
@@ -163,7 +86,7 @@ const WorkoutDetail = () => {
         <div className="flex items-center gap-4 mb-6">
           <div className="bg-gentle-teal-light p-3 rounded-xl flex items-center gap-2">
             <Clock size={18} />
-            <span>{workout.duration}</span>
+            <span>{workout.duration} minutes</span>
           </div>
           <div className="bg-gentle-lavender-light p-3 rounded-xl flex items-center gap-2">
             <User size={18} />
@@ -189,7 +112,7 @@ const WorkoutDetail = () => {
         <section className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Benefits</h2>
           <div className="grid grid-cols-2 gap-3">
-            {workout.benefits.map((benefit: string, index: number) => (
+            {workout.benefits.map((benefit, index) => (
               <div
                 key={index}
                 className="bg-gentle-blue-light p-3 rounded-xl text-center"
@@ -200,11 +123,11 @@ const WorkoutDetail = () => {
           </div>
         </section>
 
-        {/* Steps */}
+        {/* Instructions */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-3">Instructions</h2>
           <ol className="space-y-4">
-            {workout.steps.map((step: string, index: number) => (
+            {workout.instructions.map((step, index) => (
               <li key={index} className="flex gap-3">
                 <div className="bg-primary text-white rounded-full w-6 h-6 flex-shrink-0 flex items-center justify-center">
                   {index + 1}

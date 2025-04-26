@@ -9,7 +9,109 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      user_workouts: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_workouts_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      workouts: {
+        Row: {
+          benefits: string[]
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          difficulty: string
+          duration: number
+          id: string
+          image_url: string | null
+          instructions: string[]
+          instructor: string | null
+          title: string
+        }
+        Insert: {
+          benefits?: string[]
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty: string
+          duration: number
+          id?: string
+          image_url?: string | null
+          instructions?: string[]
+          instructor?: string | null
+          title: string
+        }
+        Update: {
+          benefits?: string[]
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string
+          duration?: number
+          id?: string
+          image_url?: string | null
+          instructions?: string[]
+          instructor?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workouts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "workout_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
