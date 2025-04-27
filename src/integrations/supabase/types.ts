@@ -30,6 +30,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_workout_date: string | null
+          points: number | null
+          streak_days: number | null
+          updated_at: string | null
+          user_id: string
+          workouts_completed: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_workout_date?: string | null
+          points?: number | null
+          streak_days?: number | null
+          updated_at?: string | null
+          user_id: string
+          workouts_completed?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_workout_date?: string | null
+          points?: number | null
+          streak_days?: number | null
+          updated_at?: string | null
+          user_id?: string
+          workouts_completed?: number | null
+        }
+        Relationships: []
+      }
       user_workouts: {
         Row: {
           completed_at: string | null
@@ -96,6 +129,7 @@ export type Database = {
           instructions: string[]
           instructor: string | null
           title: string
+          voice_instructions: string[] | null
         }
         Insert: {
           benefits?: string[]
@@ -109,6 +143,7 @@ export type Database = {
           instructions?: string[]
           instructor?: string | null
           title: string
+          voice_instructions?: string[] | null
         }
         Update: {
           benefits?: string[]
@@ -122,6 +157,7 @@ export type Database = {
           instructions?: string[]
           instructor?: string | null
           title?: string
+          voice_instructions?: string[] | null
         }
         Relationships: [
           {

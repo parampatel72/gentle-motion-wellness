@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import PageContainer from "@/components/layout/PageContainer";
 import NavBar from "@/components/layout/NavBar";
 import { Button } from "@/components/ui/button";
-import { Clock, ArrowLeft, Volume, User, Heart } from "lucide-react";
+import { Clock, ArrowLeft, Heart, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWorkoutById, markWorkoutAsCompleted } from "@/lib/api/workouts";
+import { updateUserAchievements } from "@/lib/api/achievements";
+import VoiceGuidance from "@/components/VoiceGuidance";
+import Leaderboard from "@/components/Leaderboard";
 
 const WorkoutDetail = () => {
   const { id } = useParams();
@@ -24,14 +27,11 @@ const WorkoutDetail = () => {
 
     try {
       await markWorkoutAsCompleted(workout.id, user.id);
+      await updateUserAchievements(workout.id);
       toast.success("Workout completed! Great job!");
     } catch (error) {
       toast.error("Failed to mark workout as completed");
     }
-  };
-
-  const handleVoiceGuidance = () => {
-    toast.info("Voice guidance enabled");
   };
 
   if (isLoading) {
@@ -92,14 +92,7 @@ const WorkoutDetail = () => {
             <User size={18} />
             <span>{workout.instructor}</span>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="ml-auto"
-            onClick={handleVoiceGuidance}
-          >
-            <Volume size={18} />
-          </Button>
+          <VoiceGuidance instructions={workout.voice_instructions || []} />
         </div>
 
         {/* Description */}
@@ -136,6 +129,11 @@ const WorkoutDetail = () => {
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* Leaderboard */}
+        <section className="mb-8">
+          <Leaderboard />
         </section>
 
         {/* Start Button */}
